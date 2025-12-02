@@ -1,0 +1,740 @@
+HTTP/1.1 200 OK
+Content-type:text/html
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>PLAYER</title>
+  <link rel="icon" href="data:;base64,=">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-color: #DDD;
+      font-family: sans-serif;
+      color: #555;
+    }
+
+    .block {
+      margin: 0;
+      border: 0;
+      padding: 0;
+      width: 100%;
+      text-align: center;
+    }
+    h1, h2, p {
+      margin: 5px;
+      border: 0;
+      overflow-wrap: break-word;
+      text-align: center;
+      font-size: 20px;
+    }
+    h1 { font-size: 30px; }
+    h2 { font-size: 24px; }
+    small { font-size: 18px; }
+
+    .cred-container, .white-box {
+      margin: 10px;
+      margin-left: 10vw;
+      margin-right: 10vw;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      font-size: 18px;
+      background-color: #EEE;
+      position: relative;
+      z-index: 0;
+    }
+
+    .button, .k-slider{
+      margin-top: 10px;
+      box-sizing: border-box;
+      display: inline-block;
+      background-color: #07F;
+      color: white;
+      padding: 5px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 18px;
+      width: calc(100% - 20px);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .symbol {
+      width: 50px;
+      height: 50px;
+      align-items: center;
+      justify-content: center;
+      margin: 1px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      background: #555;
+      color: white;
+      border-radius: 10px;
+      position: relative;
+      display: inline-flex;
+    }
+
+    .navbar {
+      z-index: 1;
+      margin: 0;
+      overflow: hidden;
+      background-color: #333;
+      position: fixed;
+      top: 0;
+      width: 100%;
+    }
+    .navbar a {
+      float: left;
+      display: block;
+      color: #f2f2f2;
+      text-align: center;
+      padding: 14px 16px;
+      font-size: 17px;
+    }
+
+    .turq  { color: #EEE; background-color: #2BA; }
+    .ylw   { color: #222; background-color: #FE3; }
+    .black { color: #EEE; background-color: #222; }
+    .red   { color: #EEE; background-color: #F26; }
+    .white { color: #555; background-color: #FFF; }
+
+    .redbar, .greenbar {
+      z-index: 1;
+      margin: 0;
+      overflow: hidden;
+      color: #DDD;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      transform: translateY(100%);
+      transition: transform 0.4s ease-in-out;
+    }
+    .redbar.visible, .greenbar.visible {
+      transform: translateY(0);
+    }
+    .redbar   { background-color: #F26; }
+    .greenbar { background-color: #2B3; }
+
+    .hide {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .k-slider {
+      user-select: none;
+      color: #222;
+      background-color: #FFF;
+    }
+
+    .blink {
+      animation: turqBlink 1s;
+    }
+    
+    .cred-container label {
+      display: block;
+      text-align: left;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .cred-container input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 4px solid #CCC;
+      background-color: #FFF;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    .ip-box {
+      font-size: 20px;
+      margin: 10px;
+      font-weight: bold;
+      background-color: #DDD;
+      padding: 10px;
+      border-radius: 16px;
+    }
+
+    @keyframes turqBlink {
+      25% { background-color: #2BA; }
+      50% { background-color: #2BA; }
+    }
+
+    @keyframes rotating {
+      0%   { color: #DDD; }
+      25%  { color: #2BA; }
+      50%  { color: #222; }
+      75%  { color: #FE3; }
+      100% { color: #DDD; }
+    }
+
+    .dotdot::after {
+      content: "\2234";
+      font-weight: 900;
+      font-size: 24px;
+      animation: rotating 2s linear infinite;
+    }
+
+    .stop-scrolling {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .joystick-container
+    {
+      position: relative;
+      width: 70vmin;
+      height: 70vmin;
+    }
+
+    .joystick-base
+    {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #222;
+      border-radius: 50%;
+      opacity: 0.6;
+    }
+
+    .joystick-handle
+    {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60vmin;
+      height: 60vmin;
+      background: #aaa;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      touch-action: none;
+      transition: transform 0.1s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="navbar">
+    <a onclick="showSection('control')">CONTROL</a>
+    <a onclick="showSection('settings')">SETTINGS</a>
+    <a onclick="showSection('info')" style="float:right">INFO</a>
+  </div>
+
+  <div class="redbar">
+    <p class="dotdot">Waiting for server </p>
+  </div>
+  <div class="greenbar">
+    <p>Connected!</p>
+  </div>
+
+  <div id="section-control">
+    <h1 class="block" style="padding-top: 45px;" id="control-title">CONTROL</h1>
+    <div class="white-box">
+      <div class="joystick-container" style="margin-left: auto;  margin-right: auto;">
+        <div class="joystick-base"></div>
+        <div class="joystick-handle"></div>
+      </div>
+    </div>
+    <hr>
+  </div>
+
+  <div id="section-settings" class="hide">
+    
+    <h1 class="block" style="padding-top: 45px;" id="settings-title">SETTINGS</h1>
+    <!-- Settings Section Content -->
+    <div class="cred-container">
+      <h2>AP mode:</h2>
+      <label>Network Name: <small id="ssid_AP_warning">---</small></label>
+      <input type="text" id="ssid_AP" value="" value0="">
+      <label>Password: <small id="pass_AP_warning">---</small></label>
+      <input type="password" id="pass_AP" value="" value0="">
+      <div class="ip-box" id="ip_AP">xxx.xxx.xxx.xxx</div>
+      <p class="button" style="width: 60vw" id="ap_restart" onclick="blink(this); socket.send(this.id + ';');">Restart AP WiFi</p>
+    </div>
+    <div class="cred-container">
+      <h2>STA mode:</h2>
+      <label>Network Name: <small id="ssid_STA_warning">---</small></label>
+      <input type="text" id="ssid_STA" value="" value0="">
+      <label>Password: <small id="pass_STA_warning">---</small></label>
+      <input type="password" id="pass_STA" value="" value0="">
+      <div class="ip-box" id="ip_STA">xxx.xxx.xxx.xxx</div>
+      <p class="button" style="width: 60vw" id="sta_restart" onclick="blink(this); socket.send(this.id + ';');">Restart STA WiFi</p>
+    </div>
+    <div style="height:30px;"></div>
+    <div class="white-box">
+      <h2>Calibration:</h2>
+      <label>DEADZONE</label>
+      <div id="deadzone"></div>
+      <label>ACCELERATION</label>
+      <div id="motor_acc"></div>
+      <label>BRAKING</label>
+      <div id="motor_dec"></div>
+    </div>
+    <div class="block">
+      <div class="button" style="width: 60vw" id="reset" onclick="confirmReset(this);">Factory Reset</div>
+    </div>
+    <hr>
+    <div style="height:50px;"></div>
+  </div>
+
+  <div id="section-info" class="hide">
+    <h1 class="block" style="padding-top: 45px;" id="info-title">VERSION</h1>
+    <div class="white-box">
+      <p id="ver">---</p>
+      <hr>
+    </div>
+    <hr>
+  </div>
+
+  <script type="text/javascript">
+    let socket;
+    let retryDelay = 1000;         // 1 s
+    const maxRetryDelay = 10000;   // cap 10 s
+
+    function blink(e) {
+      e.disabled = true;
+      e.classList.add("blink");
+      setTimeout(() => {
+        e.classList.remove('blink');
+        e.disabled = false;
+      }, 1000);
+    }
+    function clamp(number, min, max) {
+      return number > max ? max : number < min ? min : number;
+    }
+    function triggerInputEvent(e) {
+      const event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+      });
+      e.dispatchEvent(event);
+    }
+    function createSlider(id, _value, _min, _max, formater, updater, d_id) {
+      let slider;
+      let slider_parent;
+      let _d;
+      if (d_id) {
+        slider = document.getElementById(id);
+        _d = document.getElementById(d_id);
+      } else {
+        slider = document.createElement('p');
+        slider.className = 'k-slider';
+        slider_parent = document.getElementById(id)
+        slider_parent.id = id + "-block";
+        slider.id = id;
+        _d = slider;
+        slider_parent.appendChild(slider);
+      }
+      let active = false;
+      let v = 0;
+      let p_ = 0;
+      let min = Number(_min);
+      let max = Number(_max);
+      let send = false;
+      _d.innerHTML = formater(_value);
+      slider.value = Number(_value);
+      slider.addEventListener('mousedown', startDrag, { passive: true });
+      slider.addEventListener('touchstart', startDrag, { passive: true });
+      slider.addEventListener('input', updateValue, { passive: true });
+      function updateValue(event) {
+        _d.innerHTML = formater(slider.value);
+      }
+      function startDrag(event) {
+        active = true;
+        v = 0;
+        p_ = event.clientX || event.touches[0].clientX;
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+        disableScroll();
+        send = false;
+      }
+      function drag(event) {
+        if (!active) return;
+        const p = event.clientX || event.touches[0].clientX;
+        v = p - p_;
+        p_ = p;
+        animateSlider();
+      }
+      function stopDrag() {
+        active = false;
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('touchmove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+        enableScroll();
+        send = true;
+        animateSlider();
+      }
+      function animateSlider() {
+        if (Math.abs(v) < 0.05) {
+          if (send) {
+            console.log("settings;" + id + "=" + Math.round(slider.value));
+            blink(_d);
+            socket.send("settings;" + id + "=" + Math.round(slider.value));
+            send = false;
+          }
+          setTimeout(() => { send = false; }, 100);
+          return;
+        }
+        if (updater) updater();
+        slider.value = Number(slider.value) + v * 0.02;
+        v *= (active ? 0.80 : 0.99);
+        slider.value = clamp(slider.value, min, max);
+        _d.innerHTML = formater(slider.value);
+        requestAnimationFrame(animateSlider);
+      }
+    }
+    function disableScroll()
+    {
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+    }
+    function enableScroll()
+    {
+      window.removeEventListener('touchmove', preventScroll, { passive: false });
+    }
+    function preventScroll(e)
+    {
+      e.preventDefault();
+    }
+    function showSection(section) {
+      let sections = ["control", "settings", "info"];
+      sections.forEach(id => {
+        const el = document.getElementById("section-" + id);
+        if (el) el.classList.add("hide");
+      });
+      const target = document.getElementById("section-" + section);
+      if (target) {
+        target.classList.remove("hide");
+        if (section == sections[0]) {
+          socket.send("state;");
+          console.log("ask for control state");
+        }
+        else if (section == sections[1]) {
+          socket.send("settings;");
+          console.log("ask for settings");
+        }
+        else if (section == sections[2]) {
+          socket.send("info;");
+          console.log("ask for info");
+        }
+      }
+
+
+    }
+    function confirmReset(e) {
+      if (confirm("Are you sure you want to factory reset? The page will reload.")) {
+        blink(e);
+        socket.send('settings-reset;');
+        location.reload();
+      }
+    }
+    function parseSettings(rawSettings) {
+      let settings = {};
+      let parts = rawSettings.split(';');
+      parts.forEach(part => {
+        let [key, value] = part.split('=');
+        if (key && value) {
+          settings[key.trim()] = value.trim();
+        }
+      });
+      return settings;
+    }
+    function updateSettingsUI(settings) {
+      Object.entries(settings).forEach(([key, value]) => {
+        const element = document.getElementById(key);
+        if (element) {
+          if (element.tagName === "P" || key === "timeout" || key === "repeat") {
+            element.value = value;
+            triggerInputEvent(element)
+          } else if (key === "pass_STA") {
+            element.value = '*'.repeat(value);
+          } else if (key === "ip_STA" || key === "ip_AP") {
+            element.innerHTML = value;
+          } else {
+            element.value = value;
+          }
+        }
+      });
+    }
+
+    const redBar = document.querySelector('.redbar');
+    const greenBar = document.querySelector('.greenbar');
+    let heartbeatConnected = false;
+    let lastMsgTimer = null;
+    function heartbeat() {
+      // clear old timer
+      clearTimeout(lastMsgTimer);
+      // show greenbar 
+      if (!heartbeatConnected) {
+        heartbeatConnected = true;
+        redBar.classList.remove('visible');
+        greenBar.classList.add('visible');
+        setTimeout(() => greenBar.classList.remove('visible'), 1000);
+      }
+      // expire after 12s if no new heartbeat
+      lastMsgTimer = setTimeout(() => {
+        clearInterval(tickTimer);
+        redBar.classList.add('visible');
+        heartbeatConnected = false;
+        socket.close(1000, "Heartbeat closure");
+        console.warn("Heartbeat closure");
+      }, 12000);
+    }
+
+    function connectWebSocket(ip) {
+      socket = new WebSocket(`ws://${ip}/ws`);
+      console.log(`ws://${ip}/ws`);
+
+      socket.onopen = function () {
+        retryDelay = 1000;
+        console.log("WebSocket connected to:", ip);
+        //socket.send("Hello ESP32!");
+        socket.send("settings;");
+        heartbeat();
+      };
+
+      socket.onmessage = function (event) {
+        console.log("Message:", event.data);
+        ws_parse(event.data);
+        heartbeat();
+      };
+
+      socket.onclose = function () {
+        redBar.classList.add('visible');
+        console.warn(`WebSocket closed. Retry in ${retryDelay / 1000}s`);
+        setTimeout(() => connectWebSocket(ip), retryDelay);
+        retryDelay = Math.min(retryDelay * 2, maxRetryDelay); // exponential backoff
+      };
+      socket.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        socket.close(); // triggers onclose to retry
+      };
+    }
+    connectWebSocket(location.host);
+    function ws_parse(raw) {
+      const parts = raw.split(';');
+      const tag = parts[0];
+
+      switch (tag) {
+        case "settings":
+          console.log("recieve settings data");
+          const settingsData = raw.substring(raw.indexOf(";") + 1); // Extract actual settings part
+          const parsedSettings = parseSettings(settingsData);
+          updateSettingsUI(parsedSettings);
+          console.log(parsedSettings); // View parsed settings object
+          break;
+        case "info":
+          console.log("recieve version data");
+          const versionData = raw.substring(raw.indexOf(";") + 1); // Extract version data
+          document.getElementById("ver").innerHTML = versionData;
+          break;
+        default:
+          break;
+      }
+    }
+
+    // ---------- IP Address Handling ----------
+    let ip_AP = document.getElementById("ip_AP");
+    let ip_STA = document.getElementById("ip_STA");
+    /*SSID PASS*/
+    function setupTextInputSanitizer(inputId, warningId, maxLength, allowEmpty, label) {
+      const input = document.getElementById(inputId);
+      const warning = document.getElementById(warningId);
+
+      input.addEventListener("input", () => {
+        // Block ';' and control characters
+        input.value = input.value.replace(/[\x00-\x1F\x7F;]/g, '').slice(0, maxLength);
+
+        let reason = "---";
+        let valid = true;
+
+        if (!allowEmpty && input.value.length === 0) {
+          reason = "Cannot be empty";
+          valid = false;
+        } else if (input.value.length > maxLength) {
+          reason = `Too long (max ${maxLength})`;
+          valid = false;
+        }
+        if (label.startsWith("pass") && input.value.length > 0 && input.value.length < 8) {
+          reason = "Password too short (min 8)";
+          valid = false;
+        }
+        input.style.backgroundColor = valid ? "" : "#fcc";
+        warning.innerHTML = `<small>${valid ? "Valid" : reason}</small>`;
+
+        if (valid) {
+          socket.send(`settings;${label}=${input.value}`);
+          console.log(`settings;${label}=${input.value}`);
+        }
+      });
+    }
+    setupTextInputSanitizer("ssid_AP", "ssid_AP_warning", 22, false, "ssid_AP");// 15 characters for IP display
+    setupTextInputSanitizer("pass_AP", "pass_AP_warning", 63, true, "pass_AP");
+    setupTextInputSanitizer("ssid_STA", "ssid_STA_warning", 32, false, "ssid_STA");
+    setupTextInputSanitizer("pass_STA", "pass_STA_warning", 63, true, "pass_STA");
+
+    // joystick
+    const container = document.querySelector('.joystick-container');
+    const handle = document.querySelector('.joystick-handle');
+
+    const maxDistance = 150;
+    let drag = false;
+    let offset = { x: 0, y: 0 };
+    let output = { x: 0, y: 0 };
+    let lastOutput = { x: 0, y: 0 };
+    let lastSent = 0;
+
+    function mapJoystickToWheels(x, y)
+    {
+      x = Math.max(-1, Math.min(1, x));
+      y = Math.max(-1, Math.min(1, y));
+      let left = y + x;
+      let right = y - x;
+      const maxVal = Math.max(Math.abs(left), Math.abs(right));
+      if (maxVal > 1)
+      {
+        left /= maxVal;
+        right /= maxVal;
+      }
+      const L = Math.round(left * 128);
+      const R = Math.round(right * 128);
+
+      return { L, R };
+    }
+
+    function getPosition(e)
+    {
+      if (e.touches)
+      {
+        e = e.touches[0];
+      }
+      const rect = container.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left - rect.width / 2,
+        y: e.clientY - rect.top - rect.height / 2
+      };
+    }
+
+    function setHandlePosition(x, y)
+    {
+      const dist = Math.hypot(x, y);
+      if (dist > maxDistance)
+      {
+        const angle = Math.atan2(y, x);
+        x = Math.cos(angle) * maxDistance;
+        y = Math.sin(angle) * maxDistance;
+      }
+      handle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+      output.x = +(x / maxDistance).toFixed(2);
+      output.y = +(-y / maxDistance).toFixed(2);
+    }
+
+    function onStart(e)
+    {
+      drag = true;
+      handle.style.transition = 'none';
+
+      const handleRect = handle.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      offset.x = touch.clientX - (handleRect.left + handleRect.width / 2);
+      offset.y = touch.clientY - (handleRect.top + handleRect.height / 2);
+
+      onMove(e);
+    }
+
+    function onMove(e)
+    {
+      if (!drag) return;
+      const pos = getPosition(e);
+      const x = pos.x - offset.x;
+      const y = pos.y - offset.y;
+      setHandlePosition(x, y);
+      sendIfChanged();
+    }
+
+    function onEnd()
+    {
+      drag = false;
+      handle.style.transition = 'transform 0.2s ease';
+      handle.style.transform = 'translate(-50%, -50%)';
+      output = { x: 0, y: 0 };
+      sendIfChanged();
+    }
+
+    function sendIfChanged()
+    {
+      const now = performance.now();
+      const dx = output.x - lastOutput.x;
+      const dy = output.y - lastOutput.y;
+      const changed = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
+
+      if (changed)
+      {
+        const { L, R } = mapJoystickToWheels(output.x, output.y);
+        const message = `drv;${L},${R}`;
+        //console.log(message);
+        socket.send(message);
+        lastOutput = { ...output };
+        lastSent = now;
+      }
+    }
+
+    // Keep-alive every 1s if nothing sent
+    setInterval(() =>
+    {
+      const now = performance.now();
+      if (now - lastSent > 1000)
+      {
+        const { L, R } = mapJoystickToWheels(output.x, output.y);
+        const message = `drv;${L},${R}`;
+        //console.log(message);
+        socket.send(message);
+        lastSent = now;
+      }
+    }, 1000);
+
+    // --- Event listeners ---
+    handle.addEventListener('mousedown', onStart);
+    handle.addEventListener('touchstart', onStart, { passive: false });
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+
+    
+    test_settings_data = "settings;ip_AP=192.168.1.1;ssid_AP=PLAYER;pass_AP=99999999;ip_STA=31.41.59.26;ssid_STA=ROUTER;pass_STA=8;deadzone=400;motor_acc=100;motor_dec=300";
+    
+    let tickTimer_t = null;
+    window.addEventListener("load", (event) => {
+      // slider creation
+      //e_time.addEventListener("input", barUpdate);
+      //createSlider("timeout", 10, 10, 1800, S2MMSS, barUpdate, "timeout_d");
+      createSlider("deadzone", 0, 1, 1023, Math.round);
+      createSlider("motor_acc", 0, 1, 65536, Math.round);
+      createSlider("motor_dec", 0, 1, 65536, Math.round);
+
+      ws_parse(test_settings_data);
+
+      showSection("control");
+    });
+  </script>
+</body>
+
+</html>
