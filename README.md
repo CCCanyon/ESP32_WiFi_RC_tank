@@ -34,10 +34,10 @@ Elevation servo direction can be flipped by setting **Elevation min** and **Elev
    <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094518.png" width="300"/>
 
 4. Your device may fight you and try to reconnect to a network with internet — fight back.  
-   Then the captive portal will appear.  
+   Then the captive portal will appear. You can open **192.168.1.1** in your browser, in this mode you won't have internet while controlling the tank.  
    <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094648.png" width="300"/>
 
-5. Now you can open **192.168.1.1** in your browser.  
+5. Here you can also change the network it connects to.  
    <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094651.png" width="300"/>
 
 6. If it's connected to your device, it will show its IP. Refresh if needed.  
@@ -55,17 +55,17 @@ Round joystick for driving, rectangular joystick for turret.
 <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094733.png" width="300"/>
 
 ### Settings tab  
-Change AP (ESP32’s Wi-Fi) and STA (router/device) credentials.  
+Change AP (ESP32’s Wi-Fi) and STA (router/your device) credentials.  
 <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094740.png" width="300"/>
 
 ### Parameters  
 At the bottom of the settings tab. Drag left/right to change.  
 It flashes cyan when the value is committed.
 
-1. Increase drive deadzone if the drive joystick does nothing near center.  
+1. Increase drive deadzone if the drive joystick does nothing near centre.  
 2. Tune traverse centre if turret spins on its own.  
-3. Traverse limit trims max speed for continuous rotation servo.  
-4. Elevation min/max constrain the gun elevation motion.
+3. Traverse limit trims max speed for the continuous rotation servo.  
+4. Elevation min/max constrain the gun elevation angle.
 
 <img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094743.png" width="300"/>
 
