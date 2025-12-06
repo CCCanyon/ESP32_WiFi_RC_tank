@@ -24,7 +24,7 @@ ESP32Servo by Kevin Harrington,John K.Bennett: https://madhephaestus.github.io/E
 
 #define version F(__FILE__ " " __DATE__ " " __TIME__)
 
-#define bootPin 0    // button
+//#define bootPin 0    // button
 
 // button
 uint32_t boot_timer = 0;
@@ -33,7 +33,19 @@ bool _boot_state = 0;  // press: LOW, release: HIGH
 
 bool blink = 0;
 uint32_t blink_timer = 0;
-int LED_ = 10;
+int LED_ = 20;
+
+
+int LED0_mode = 0;
+int LED1_mode = 0;
+int LED0_duty = 0;
+int LED1_duty = 0;
+const int LED0 = 2; // A0
+const int LED1 = 8; // D8
+const int LED0_channel = 4;
+const int LED1_channel = 5;
+bool strobe_dir = 0;
+int strobe_interval = 1000;
 
 // control
 int32_t drive_timer = 0;
@@ -49,8 +61,12 @@ const int AIN2 = 5; // D3 -> IN2
 const int BIN1 = 6; // D4 -> IN3
 const int BIN2 = 7; // D5 -> IN4
 const int MAX_SPEED = 128;   // match your joystick range
+bool L_forward = 1;
+bool R_forward = 1;
 int speed_L = 0;
 int speed_R = 0;
+const int L_channel = 2;
+const int R_channel = 3;
 
 //const float pwm_scalar = 13.1072; // 16383 example duty cycle for 1.25ms pulse. 65536 = 5ms
 
@@ -129,7 +145,7 @@ ConfigData defaultConfig = {
   // STA mode, of device ESP32 connects to
   { 0, 0, 0, 0 },  // IP address
   "Arduino:D",          // SSID
-  "99999999",        // IP address
+  "99999999",        // WiFi password
   // control settings
   400,
   1500,
@@ -193,22 +209,28 @@ void setup()
   pinMode(AIN2, OUTPUT);
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
-  ledcAttachChannel(AIN1, drive_freq, drive_resolution, 2);
-  ledcAttachChannel(AIN2, drive_freq, drive_resolution, 3);
-  ledcAttachChannel(BIN1, drive_freq, drive_resolution, 4);
-  ledcAttachChannel(BIN2, drive_freq, drive_resolution, 5);
-
+  ledcAttachChannel(AIN1, drive_freq, drive_resolution, L_channel);
+  ledcAttachChannel(BIN1, drive_freq, drive_resolution, R_channel);
+  //ledcAttachChannel(BIN1, drive_freq, drive_resolution, 4);
+  //ledcAttachChannel(BIN2, drive_freq, drive_resolution, 5);
+  pinMode(LED0, OUTPUT);
+  pinMode(LED1, OUTPUT);
+  ledcAttachChannel(LED0, 1000, 10, LED0_channel);
+  ledcAttachChannel(LED1, 1000, 10, LED1_channel);
+  ledcWrite(LED0_channel, 1023);
+  ledcWrite(LED1_channel, 1023);
   // small delay to let DRV8833 inputs settle
   delay(10);
   Serial.begin(115200);          // initialize serial communication
-  pinMode(LED_, OUTPUT);  // set the LED pin mode
-  pinMode(bootPin, INPUT);       // set the arm pin mode
+  //pinMode(LED_, OUTPUT);  // set the LED pin mode
+  //pinMode(bootPin, INPUT);       // set the arm pin mode
 
   // Motor PWM setup
-  setMotor(AIN1, AIN2, 0);
-  setMotor(BIN1, BIN2, 0);
+  //setMotor(AIN1, AIN2, 0);
+  //setMotor(BIN1, BIN2, 0);
+  setMotor_L(0);
+  setMotor_R(0);
 
-  ESP32PWM::allocateTimer(0); // Use timer 0 for servo
   traverse_servo.setPeriodHertz(50); // Standard 50Hz servo
   elevation_servo.setPeriodHertz(50); // Standard 50Hz servo
   traverse_servo.attach(turret_traverse_pin);
@@ -362,11 +384,11 @@ void loop()
   
   // websocket heartbeat ==================================================================
   wifiState_server_timestamp += dt;
-  if (wifiState_server_timestamp >= 1000000)
+  if (wifiState_server_timestamp >= 5000000)
   {
-    while (wifiState_server_timestamp >= 1000000)
+    while (wifiState_server_timestamp >= 5000000)
     {
-      wifiState_server_timestamp -= 1000000;
+      wifiState_server_timestamp -= 5000000;
     }
     //Serial.print("HB");
     webSocketHeartbeat();
@@ -407,6 +429,31 @@ void loop()
     digitalWrite(LED_, LOW);
   }
 
+  switch (LED0_mode)
+  {
+    case 0:
+      ledcWrite(LED0, 1023);
+      break;
+    case 1:
+      ledcWrite(LED0, LED0_duty);
+      break;
+  }
+  switch (LED1_mode)
+  {
+    case 0:
+      ledcWrite(LED1, 1023);
+      break;
+    case 1:
+      LED1_duty += strobe_dir? 4:-4;
+      if(LED1_duty >= 1023 + strobe_interval){ strobe_dir = 0; }
+      if(LED1_duty <= -strobe_interval){ strobe_dir = 1; }
+      ledcWrite(LED1, constrain(LED1_duty, 0, 1023));
+      break;
+    case 2:
+      ledcWrite(LED1, 0);
+      break;
+  }
+
   // control ==================================================================
   drive_failsafe_timer +=dt;
   drive_timer += dt;
@@ -418,14 +465,14 @@ void loop()
     }
     if(wifiState == STATE_SERVING && drive_failsafe_timer < drive_failsafe_timeout)
     {
-      setMotor(AIN1, AIN2, speed_L);
-      setMotor(BIN1, BIN2, speed_R);
+      setMotor_L(speed_L);
+      setMotor_R(speed_R);
       
     }
     else
     {
-      setMotor(AIN1, AIN2, 0);
-      setMotor(BIN1, BIN2, 0);
+      setMotor_L(0);
+      setMotor_R(0);
     }
   }
 
@@ -546,6 +593,31 @@ void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsE
             traverse_servo.writeMicroseconds(turret_T);
             elevation_servo.writeMicroseconds(turret_E);
             //Serial.printf("T=%d,E=%d,duty_T=%d,duty_E=%d\n", T, E, turret_T, turret_E);
+          }
+        }
+        else if (strcmp(tag, "headlight") == 0)
+        {
+          LED0_mode = !LED0_mode;
+        }
+        else if (strcmp(tag, "strobelight") == 0)
+        {
+          LED1_mode += 1;
+          LED1_mode %= 3;
+        }
+        else if (strcmp(tag, "led0_duty") == 0)
+        {
+          int duty;
+          if (sscanf(payload, "%d", &duty) == 1)
+          {
+            LED0_duty = duty * 102.3;
+          }
+        }
+        else if (strcmp(tag, "led1_interval") == 0)
+        {
+          int interval;
+          if (sscanf(payload, "%d", &interval) == 1)
+          {
+            strobe_interval = interval * 100;
           }
         }
         else if (strcmp(tag, "settings-reset") == 0)
@@ -669,6 +741,7 @@ void printWifiStatus()
 // =====================================================
 // Helper: set motor speed (signed value -128..128)
 // =====================================================
+/*
 void setMotor(int pin1, int pin2, int speed)
 {
   speed = constrain(speed, -128, 128);
@@ -690,7 +763,79 @@ void setMotor(int pin1, int pin2, int speed)
     ledcWrite(pin2, 0);
   }
 }
+*/
+void setMotor_L(int speed)
+{
+  speed = constrain(speed, -128, 128);
+  int duty = (speed == 0) ? 0 : map(abs(speed), 0, 128, config.deadzone, motor_max);
 
+  if (speed > 0)
+  {
+    if (!L_forward)
+    {
+      ledcDetach(AIN2);
+      ledcAttachChannel(AIN1, drive_freq, drive_resolution, L_channel);
+      L_forward = 1;
+    }
+    ledcWrite(AIN1, duty);
+    digitalWrite(AIN2, LOW);
+
+  }
+  else if (speed < 0)
+  {
+    if (L_forward)
+    {
+      ledcDetach(AIN1);
+      ledcAttachChannel(AIN2, drive_freq, drive_resolution, L_channel);
+      L_forward = 0;
+    }
+    ledcWrite(AIN2, duty);
+    digitalWrite(AIN1, LOW);
+
+  }
+  else
+  {
+    ledcWrite(L_forward? AIN1 : AIN2, 0);
+    digitalWrite(AIN1, LOW);
+    digitalWrite(AIN2, LOW);
+  }
+}
+void setMotor_R(int speed)
+{
+  speed = constrain(speed, -128, 128);
+  int duty = (speed == 0) ? 0 : map(abs(speed), 0, 128, config.deadzone, motor_max);
+
+  if (speed > 0)
+  {
+    if (!R_forward)
+    {
+      ledcDetach(BIN2);
+      ledcAttachChannel(BIN1, drive_freq, drive_resolution, R_channel);
+      R_forward = 1;
+    }
+    ledcWrite(BIN1, duty);
+    digitalWrite(BIN2, LOW);
+
+  }
+  else if (speed < 0)
+  {
+    if (R_forward)
+    {
+      ledcDetach(BIN1);
+      ledcAttachChannel(BIN2, drive_freq, drive_resolution, R_channel);
+      R_forward = 0;
+    }
+    ledcWrite(BIN2, duty);
+    digitalWrite(BIN1, LOW);
+
+  }
+  else
+  {
+    ledcWrite(R_forward? BIN1 : BIN2, 0);
+    digitalWrite(BIN1, LOW);
+    digitalWrite(BIN2, LOW);
+  }
+}
 // config
 // EEPROM
 void configWrite(const ConfigData &configData)
