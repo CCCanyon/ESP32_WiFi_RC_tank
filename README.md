@@ -72,7 +72,7 @@ It flashes cyan when the value is committed.
 ---
 
 ## Info tab  
-Shows firmware build information.  
-<img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251202-094747.png" width="300"/>
+Shows firmware build information. Also turn on lights and change their settings here.  
+<img src="https://github.com/CCCanyon/ESP32_WiFi_RC_tank/blob/main/images/Screenshot_20251206-143209.png" width="300"/>
 
 *Thank you chatGPT for formatting this!*
